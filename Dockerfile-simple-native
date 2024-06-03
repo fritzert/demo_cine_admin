@@ -1,0 +1,7 @@
+FROM amd64/alpine:3.17
+WORKDIR /app
+ARG API_IMAGE_NAME
+
+COPY target/${API_IMAGE_NAME} /app/${API_IMAGE_NAME}
+EXPOSE 8080
+ENTRYPOINT ["/app/demo_cine_admin"]

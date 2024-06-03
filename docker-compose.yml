@@ -1,0 +1,73 @@
+name: ${PROJECT_NAME}
+
+services:
+  postgres_db:
+    image: postgres:15.1
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    restart: always
+    volumes:
+      - ../cine_data_log/cine_postgres-vol:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+  redis_db:
+    image: redis:6.2-alpine
+    container_name: ${REDIS_CONTAINER_NAME}
+    restart: always
+    ports:
+      - "6379:6379"
+    command: /bin/sh -c "redis-server --requirepass $$REDIS_PASSWORD"
+    volumes:
+      - ../cine_data_log/cine_redis-vol:/data
+    env_file:
+      - redis.env
+
+  api_service:
+    build:
+      context: .
+      dockerfile: Dockerfile-native
+      args:
+        DOCKER_BUILDKIT: 1
+        API_IMAGE_NAME: ${API_IMAGE_NAME}
+    image: frix/${API_IMAGE_NAME}:latest
+    container_name: ${API_CONTAINER_NAME}
+    restart: always
+    volumes:
+        - ../cine_data_log/cine_log-vol:/log
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_PATH: ${APP_PATH}
+      APP_SHOW_LOG: ${APP_SHOW_LOG}
+      APP_SHOW_DOCS: ${APP_SHOW_DOCS}
+      APP_HOST_ORIGIN: ${APP_HOST_ORIGIN}
+      APP_CLOUDINARY_URL: ${APP_CLOUDINARY_URL}
+      APP_DEFAULT_SECRETPASS: ${APP_DEFAULT_SECRETPASS}
+      APP_OAUTH_GOOGLE_CLIENTID: ${APP_OAUTH_GOOGLE_CLIENTID}
+      NGROK_ENABLED: ${NGROK_ENABLED}
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      TOKEN_SECRET_KEY: ${TOKEN_SECRET_KEY}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM_SENDER: ${MAIL_FROM_SENDER}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_URL_DOCKER: ${POSTGRES_URL_DOCKER}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      postgres_db:
+        condition: service_started
+      redis_db:
+        condition: service_started
+
+# solo necesario cuando es gestionado por docker
+#volumes:
+#  cine_postgres-vol:
+#    external: false
